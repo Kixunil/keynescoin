@@ -739,9 +739,6 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
         if (txout.nValue < 0)
             return state.DoS(100, error("CheckTransaction() : txout.nValue negative"),
                              REJECT_INVALID, "bad-txns-vout-negative");
-        if (txout.nValue > MAX_MONEY)
-            return state.DoS(100, error("CheckTransaction() : txout.nValue too high"),
-                             REJECT_INVALID, "bad-txns-vout-toolarge");
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction() : txout total out of range"),
@@ -805,7 +802,7 @@ int64_t GetMinFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree, 
     }
 
     if (!MoneyRange(nMinFee))
-        nMinFee = MAX_MONEY;
+        nMinFee = (int64_t)(((uint64_t)-1) >> 1);
     return nMinFee;
 }
 
@@ -1178,7 +1175,7 @@ int64_t GetBlockValue(int nHeight, int64_t nFees)
     int64_t nSubsidy = 50 * COIN;
 
     // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= (nHeight / Params().SubsidyHalvingInterval());
+    nSubsidy <<= (nHeight / Params().SubsidyHalvingInterval());
 
     return nSubsidy + nFees;
 }
