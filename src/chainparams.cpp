@@ -9,6 +9,8 @@
 #include "core.h"
 #include "protocol.h"
 #include "util.h"
+#include <cstdio>
+#include "main.h"
 
 #include <boost/assign/list_of.hpp>
 
@@ -108,9 +110,9 @@ public:
         pchMessageStart[2] = 0xb4;
         pchMessageStart[3] = 0xd9;
         vAlertPubKey = ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
-        nDefaultPort = 8333;
+        nDefaultPort = 28333;
         nRPCPort = 8332;
-        bnProofOfWorkLimit = CBigNum(~uint256(0) >> 32);
+        bnProofOfWorkLimit = CBigNum(~uint256(0) >> 16);
         nSubsidyHalvingInterval = 210000;
 
         // Build the genesis block. Note that the output of the genesis coinbase cannot
@@ -121,24 +123,44 @@ public:
         //     CTxIn(COutPoint(000000, -1), coinbase 04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73)
         //     CTxOut(nValue=50.00000000, scriptPubKey=0x5F1DF16B2B704C8A578D0B)
         //   vMerkleTree: 4a5e1e
-        const char* pszTimestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
+        const char* pszTimestamp = "2014-03-30 Nobody 50.06, Kiska 29.66, Fico 20.28; Founder: heXKRhnGdSg";
+	int extranonce = 42;
         CTransaction txNew;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+        txNew.vin[0].scriptSig = CScript() << extranonce << CBigNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
         txNew.vout[0].nValue = 50 * COIN;
-        txNew.vout[0].scriptPubKey = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f") << OP_CHECKSIG;
+        txNew.vout[0].scriptPubKey = CScript() << ParseHex("2dc4f1967fbf825c77dadd9da14c3608428ada53") << OP_EQUALVERIFY << OP_CHECKSIG;
         genesis.vtx.push_back(txNew);
         genesis.hashPrevBlock = 0;
         genesis.hashMerkleRoot = genesis.BuildMerkleTree();
         genesis.nVersion = 1;
-        genesis.nTime    = 1231006505;
-        genesis.nBits    = 0x1d00ffff;
-        genesis.nNonce   = 2083236893;
+        genesis.nTime    = 1396187239;
+        genesis.nBits    = 0x1e008fff;
+        genesis.nNonce   = 23443383;
 
         hashGenesisBlock = genesis.GetHash();
-        assert(hashGenesisBlock == uint256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
-        assert(genesis.hashMerkleRoot == uint256("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+#ifdef MINE_GENESIS
+	CBigNum bnTarget;
+	bnTarget.SetCompact(genesis.nBits);
+
+	fprintf(stderr, "Target: %s\n", bnTarget.ToString().c_str());
+	assert(!(bnTarget <= 0 || bnTarget > Params().ProofOfWorkLimit()));
+
+	while(hashGenesisBlock > bnTarget.getuint256()) {
+		++genesis.nNonce;
+		if(!genesis.nNonce) {
+			++extranonce;
+		};
+		hashGenesisBlock = genesis.GetHash();
+        }
+
+	fprintf(stderr, "Nonce = %d\nExtranonce = %d\n", genesis.nNonce, extranonce);
+	fprintf(stderr, "Genesis hash = %s\nMerkle root = %s\n", hashGenesisBlock.GetHex().c_str(), genesis.hashMerkleRoot.GetHex().c_str());
+#else
+        assert(hashGenesisBlock == uint256("0x000000530b4b2d75534bfa61c42e62f4402ce579dd8507c70009e69439f4bd19"));
+        assert(genesis.hashMerkleRoot == uint256("0x2446d19ab3361d3484c4f1dade799a54dfd010f193521659a26341c6f50b811a"));
+#endif
 
         vSeeds.push_back(CDNSSeedData("bitcoin.sipa.be", "seed.bitcoin.sipa.be"));
         vSeeds.push_back(CDNSSeedData("bluematt.me", "dnsseed.bluematt.me"));
@@ -146,9 +168,9 @@ public:
         vSeeds.push_back(CDNSSeedData("bitcoinstats.com", "seed.bitcoinstats.com"));
         vSeeds.push_back(CDNSSeedData("xf2.org", "bitseed.xf2.org"));
 
-        base58Prefixes[PUBKEY_ADDRESS] = list_of(0);
-        base58Prefixes[SCRIPT_ADDRESS] = list_of(5);
-        base58Prefixes[SECRET_KEY] =     list_of(128);
+        base58Prefixes[PUBKEY_ADDRESS] = list_of(45);
+        base58Prefixes[SCRIPT_ADDRESS] = list_of(50);
+        base58Prefixes[SECRET_KEY] =     list_of(173);
         base58Prefixes[EXT_PUBLIC_KEY] = list_of(0x04)(0x88)(0xB2)(0x1E);
         base58Prefixes[EXT_SECRET_KEY] = list_of(0x04)(0x88)(0xAD)(0xE4);
 
@@ -203,7 +225,11 @@ public:
         genesis.nTime = 1296688602;
         genesis.nNonce = 414098458;
         hashGenesisBlock = genesis.GetHash();
-        assert(hashGenesisBlock == uint256("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+#ifndef MINE_GENESIS
+        assert(hashGenesisBlock == uint256("0xcb01395bbb2b39c4fc1dd66a06a7d1893b862ec7c9ab1199ed5eb5c9dda0511f"));
+#else
+	fprintf(stderr, "Genesis hash = %s\nMerkle root = %s\n", hashGenesisBlock.GetHex().c_str(), genesis.hashMerkleRoot.GetHex().c_str());
+#endif
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -239,7 +265,12 @@ public:
         hashGenesisBlock = genesis.GetHash();
         nDefaultPort = 18444;
         strDataDir = "regtest";
-        assert(hashGenesisBlock == uint256("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+
+#ifndef MINE_GENESIS
+        assert(hashGenesisBlock == uint256("0x578c9cce7b8fcf277fee36c6fa185698a5eb752efc8e54627d02f0eb3a71cc92"));
+#else
+	fprintf(stderr, "Genesis hash = %s\nMerkle root = %s\n", hashGenesisBlock.GetHex().c_str(), genesis.hashMerkleRoot.GetHex().c_str());
+#endif
 
         vSeeds.clear();  // Regtest mode doesn't have any DNS seeds.
     }
