@@ -298,7 +298,7 @@ Value getwork(const Array& params, bool fHelp)
             + HelpExampleRpc("getwork", "")
         );
 
-#if 0
+#if 1
     if (vNodes.empty())
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
 
@@ -482,7 +482,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     if (strMode != "template")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
-#if 0
+#if 1
     if (vNodes.empty())
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
 
